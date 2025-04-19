@@ -94,6 +94,7 @@ pub(crate) struct Metadata {
 /// where each node is a hash of the column of the encoded coefficient matrix U.
 #[derive(Derivative, CanonicalSerialize, CanonicalDeserialize)]
 #[derivative(Default(bound = ""), Clone(bound = ""), Debug(bound = ""))]
+/// The Linear Code Commitment State
 pub struct LinCodePCCommitment<C: Config> {
     // number of rows resp. columns of the square matrix containing the coefficients of the polynomial
     pub(crate) metadata: Metadata,
@@ -112,6 +113,7 @@ impl<C: Config> PCCommitment for LinCodePCCommitment<C> {
 
 #[derive(Derivative, CanonicalSerialize, CanonicalDeserialize)]
 #[derivative(Default(bound = ""), Clone(bound = ""), Debug(bound = ""))]
+/// The Linear Code Commitment State
 pub struct LinCodePCCommitmentState<F, H>
 where
     F: PrimeField,

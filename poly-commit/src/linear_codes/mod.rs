@@ -34,7 +34,11 @@ mod multilinear_brakedown;
 mod multilinear_ligero;
 mod univariate_ligero;
 
-pub use data_structures::{BrakedownPCParams, LigeroPCParams, LinCodePCProof};
+pub use data_structures::{
+    BrakedownPCParams, LigeroPCParams, 
+    LinCodePCProof, LinCodePCCommitment,
+    LinCodePCCommitmentState
+};
 pub use multilinear_brakedown::MultilinearBrakedown;
 pub use multilinear_ligero::MultilinearLigero;
 pub use univariate_ligero::UnivariateLigero;
