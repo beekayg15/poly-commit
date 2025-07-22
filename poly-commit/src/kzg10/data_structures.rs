@@ -11,6 +11,9 @@ use ark_std::{
     ops::{Add, AddAssign},
 };
 
+#[cfg(feature = "parallel")]
+use rayon::prelude::*;
+
 /// `UniversalParams` are the universal parameters for the KZG10 scheme.
 #[derive(Derivative)]
 #[derivative(
@@ -293,15 +296,32 @@ pub struct PreparedVerifierKey<E: Pairing> {
 
 impl<E: Pairing> PreparedVerifierKey<E> {
     /// prepare `PreparedVerifierKey` from `VerifierKey`
+    #[cfg_attr(feature = "parallel", inline(always))]
     pub fn prepare(vk: &VerifierKey<E>) -> Self {
         let supported_bits = E::ScalarField::MODULUS_BIT_SIZE as usize;
 
-        let mut prepared_g = Vec::<E::G1Affine>::new();
-        let mut g = E::G1::from(vk.g.clone());
-        for _ in 0..supported_bits {
-            prepared_g.push(g.clone().into());
-            g.double_in_place();
-        }
+        #[cfg(feature = "parallel")]
+        let prepared_g: Vec<E::G1Affine> = (0..supported_bits)
+            .into_par_iter()
+            .map(|i| {
+                let mut g = E::G1::from(vk.g);
+                for _ in 0..i {
+                    g.double_in_place();
+                }
+                g.into()
+            })
+            .collect();
+
+        #[cfg(not(feature = "parallel"))]
+        let prepared_g: Vec<E::G1Affine> = {
+            let mut g = E::G1::from(vk.g);
+            let mut vec = Vec::with_capacity(supported_bits);
+            for _ in 0..supported_bits {
+                vec.push(g.clone().into());
+                g.double_in_place();
+            }
+            vec
+        };
 
         Self {
             prepared_g,
@@ -373,16 +393,32 @@ pub struct PreparedCommitment<E: Pairing>(
 
 impl<E: Pairing> PreparedCommitment<E> {
     /// prepare `PreparedCommitment` from `Commitment`
+    #[cfg_attr(feature = "parallel", inline(always))]
     pub fn prepare(comm: &Commitment<E>) -> Self {
-        let mut prepared_comm = Vec::<E::G1Affine>::new();
-        let mut cur = E::G1::from(comm.0.clone());
-
         let supported_bits = E::ScalarField::MODULUS_BIT_SIZE as usize;
 
-        for _ in 0..supported_bits {
-            prepared_comm.push(cur.clone().into());
-            cur.double_in_place();
-        }
+        #[cfg(feature = "parallel")]
+        let prepared_comm: Vec<E::G1Affine> = (0..supported_bits)
+            .into_par_iter()
+            .map(|i| {
+                let mut cur = E::G1::from(comm.0);
+                for _ in 0..i {
+                    cur.double_in_place();
+                }
+                cur.into()
+            })
+            .collect();
+
+        #[cfg(not(feature = "parallel"))]
+        let prepared_comm: Vec<E::G1Affine> = {
+            let mut cur = E::G1::from(comm.0);
+            let mut vec = Vec::with_capacity(supported_bits);
+            for _ in 0..supported_bits {
+                vec.push(cur.clone().into());
+                cur.double_in_place();
+            }
+            vec
+        };
 
         Self { 0: prepared_comm }
     }

@@ -186,7 +186,8 @@ where
                 hiding_degree
             ));
 
-            randomness = Randomness::rand(hiding_degree, false, None, &mut rng);
+            randomness = <Randomness<E::ScalarField, P> as PCCommitmentState>::rand(hiding_degree, false, None, &mut rng);
+
             Self::check_hiding_bound(
                 randomness.blinding_polynomial.degree(),
                 powers.powers_of_gamma_g.len(),
@@ -462,9 +463,12 @@ fn skip_leading_zeros_and_convert_to_bigints<F: PrimeField, P: DenseUVPolynomial
 
 fn convert_to_bigints<F: PrimeField>(p: &[F]) -> Vec<F::BigInt> {
     let to_bigint_time = start_timer!(|| "Converting polynomial coeffs to bigints");
-    let coeffs = ark_std::cfg_iter!(p)
-        .map(|s| s.into_bigint())
-        .collect::<Vec<_>>();
+    #[cfg(feature = "parallel")]
+    let coeffs: Vec<F::BigInt> = p.par_iter().map(|s| s.into_bigint()).collect();
+
+    #[cfg(not(feature = "parallel"))]
+    let coeffs: Vec<F::BigInt> = p.iter().map(|s| s.into_bigint()).collect();
+
     end_timer!(to_bigint_time);
     coeffs
 }
